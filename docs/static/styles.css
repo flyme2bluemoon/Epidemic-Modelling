@@ -1,0 +1,17 @@
+#content {
+    margin-top: 20px;
+    margin-bottom: 50px;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    text-align: center;
+}
+
+a.headers:link, a.headers:visited, a.headers:hover {
+    text-decoration: none;
+    color: black;
+}
+
+footer {
+    text-align: center;
+}
