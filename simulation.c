@@ -19,7 +19,8 @@ typedef struct {
         Status -1 | susceptable
         Status -2 | died
         Status -3 | recovered
-        Status 0 - 14 | days since infection
+        Status 1 - 14 | days since infection
+        Status 0 | Invalid (no person)
     */
 } Person;
 
@@ -63,29 +64,44 @@ int main(void) {
     srand((unsigned) time(&t));
 
     // getting values from user
-    int area = get_int("Area:");
+    int width = get_int("Width:");
     int population = get_int("Population:");
 
+    if (population > width * width) {
+        printf("Population must be less than the area.\n");
+        return 1;
+    }
+
+    printf("\nRunning Simulation!\n\n");
+
     // creating arrays
-    int map[area][area];
+    int map[width][width];
     Person people[population];
 
     // initializing arrays
-    for (int i = 0; i < area; i++) {
-        for (int j = 0; j < area; j++) {
+    for (int i = 0; i < width; i++) {
+        for (int j = 0; j < width; j++) {
             map[i][j] = 0;
         }
     }
 
     for (int i = 0; i < population; i++) {
-        people[i].coordinates.x_position = rand() % area;
-        people[i].coordinates.y_position = rand() % area;
+        people[i].coordinates.x_position = rand() % width;
+        people[i].coordinates.y_position = rand() % width;
         people[i].status = -1;
+        if (map[people[i].coordinates.x_position][people[i].coordinates.y_position] != 0) {
+            i--;
+        }
+        map[people[i].coordinates.x_position][people[i].coordinates.y_position] = people[i].status;
     }
 
+    // patient zero
+    int patient_zero = rand() % population;
+    people[patient_zero].status = 1;
+
     // actual code
-    for (int i = 0; i < area; i++) {
-        for (int j = 0; j < area; j++) {
+    for (int i = 0; i < width; i++) {
+        for (int j = 0; j < width; j++) {
             printf("%d ", map[i][j]);
         }
         printf("\n");
@@ -94,6 +110,9 @@ int main(void) {
     for (int i = 0; i < population; i++) {
         printf("Person %d is at (%d, %d) and has the status code %d.\n", i, people[i].coordinates.x_position, people[i].coordinates.y_position, people[i].status);
     }
+
+    printf("\n====SUMMARY====\n");
+    printf("Patient Zero: %d\n", patient_zero);
 
     return 0;
 }
