@@ -55,6 +55,19 @@ int get_int(char *prompt) {
     return output;
 }
 
+void print_map(int width, int map[width][width]) {
+    for (int i = 0; i < width; i++) {
+        for (int j = 0; j < width; j++) {
+            printf("%d ", map[i][j]);
+        }
+        printf("\n");
+    }
+
+    printf("\n");
+
+    return;
+}
+
 int main(void) {
     // print greeting message
     greet();
@@ -100,12 +113,7 @@ int main(void) {
     people[patient_zero].status = 1;
 
     // actual code
-    for (int i = 0; i < width; i++) {
-        for (int j = 0; j < width; j++) {
-            printf("%d ", map[i][j]);
-        }
-        printf("\n");
-    }
+    print_map(width, map);
 
     for (int i = 0; i < population; i++) {
         printf("Person %d is at (%d, %d) and has the status code %d.\n", i, people[i].coordinates.x_position, people[i].coordinates.y_position, people[i].status);
