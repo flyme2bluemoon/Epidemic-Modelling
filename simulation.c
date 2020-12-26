@@ -349,7 +349,7 @@ int main(int argc, char *argv[]) {
     double basic_reproduction_number = calculate_basic_reproduction_number(population, people);
     printf("Basic Reproduction Number: %f\n", basic_reproduction_number);
     double vaccine_percent_requirement = vaccinized_percentage_required(basic_reproduction_number);
-    printf("Percentage of population immunized to stop spread required: %f\n", vaccine_percent_requirement);
+    printf("Percentage of population immunized to stop spread required: %.2f%%\n", vaccine_percent_requirement);
 
     return 0;
 }
