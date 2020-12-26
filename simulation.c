@@ -44,6 +44,9 @@ int get_int(char *prompt) {
         strcpy(input, "");
         fgets(input, BUFFERSIZE, stdin);
         int length_of_input = strlen(input);
+        if (length_of_input <= 1) {
+            is_done = false;
+        }
         for (int i = 0; i < length_of_input; i++) {
             if (!isdigit(input[i]) && input[i] != '\n' && input[i] != ' ' && input[i] != '\t') {
                 is_done = false;
@@ -206,10 +209,6 @@ int main(void) {
     people[patient_zero].status = 1;
 
     // actual code
-    printf("[*] Day 0\n==========\n");
-    print_map(width, population, map, people);
-    printf("\n");
-
     for (int i = 1; i <= days; i++) {
         printf("[*] Day %d\n==========\n", i);
         printf("Incrementing...\n");
