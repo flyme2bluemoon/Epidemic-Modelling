@@ -1,3 +1,11 @@
+// 
+// CS50x 2020 Final Project
+// Project title: Epidemic Modelling
+// Name: Matthew Shen
+// GitHub: github.com/flyme2bluemoon
+// City: Toronto, ON, Canada
+// 
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
