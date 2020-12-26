@@ -1,7 +1,7 @@
 #!/bin/zsh
 
 width=25;
-population=5;
+population=500;
 days=5;
 range=2;
 transmission_distance=1;
