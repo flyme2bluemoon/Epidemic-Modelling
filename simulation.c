@@ -68,21 +68,40 @@ void print_map(int width, int map[width][width]) {
     return;
 }
 
+void move_people(int range, int width, int population, int map[width][width], Person people[population]) {
+    for (int i = 0; i < population; i++) {
+        int dx = (rand() % (range * 2 + 1)) - range;
+        int dy = (rand() % (range * 2 + 1)) - range;
+        if (people[i].coordinates.x_position + dx >= width || people[i].coordinates.x_position + dx < 0 || people[i].coordinates.y_position >= width || people[i].coordinates.y_position + dx < 0) {
+            i--;
+        } else {
+            map[people[i].coordinates.x_position][people[i].coordinates.y_position] = 0;
+            people[i].coordinates.x_position += dx;
+            people[i].coordinates.y_position += dy;
+            map[people[i].coordinates.x_position][people[i].coordinates.y_position] = people[i].status;
+        }
+    }
+
+    return;
+}
+
 int main(void) {
     // print greeting message
     greet();
 
-    // seed random number generator
-    time_t t;
-    srand((unsigned) time(&t));
+    srand(time(NULL));
 
     // getting values from user
-    int width = get_int("Width:");
-    int population = get_int("Population:");
+    int width = get_int("Width (recommended: 10-100):");
+    int population = get_int("Population (requirement: < width * width):");
+    int days = get_int("Numbers of days (recommended: 30):");
+    int range = get_int("Range of movements (recommended: 2):");
 
     if (population > width * width) {
         printf("Population must be less than the area.\n");
         return 1;
+    } else if (range > width) {
+        printf("Range must be less than the width.\n");
     }
 
     printf("\nRunning Simulation!\n\n");
@@ -115,8 +134,14 @@ int main(void) {
     // actual code
     print_map(width, map);
 
-    for (int i = 0; i < population; i++) {
-        printf("Person %d is at (%d, %d) and has the status code %d.\n", i, people[i].coordinates.x_position, people[i].coordinates.y_position, people[i].status);
+    for (int i = 0; i < days; i++) {
+        move_people(range, width, population, map, people);
+
+        print_map(width, map);
+
+        for (int j = 0; j < population; j++) {
+            printf("Person %d is at (%d, %d) and has the status code %d.\n", j, people[j].coordinates.x_position, people[j].coordinates.y_position, people[j].status);
+        }
     }
 
     printf("\n====SUMMARY====\n");
