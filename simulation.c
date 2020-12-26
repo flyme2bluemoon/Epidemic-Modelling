@@ -115,6 +115,7 @@ int main(void) {
     // print greeting message
     greet();
 
+    // seed the random function
     srand(time(NULL));
 
     // getting values from user
@@ -122,7 +123,7 @@ int main(void) {
     int population = get_int("Population (requirement: < width * width):");
     int days = get_int("Numbers of days (recommended: 30):");
     int range = get_int("Range of movements (recommended: 2):");
-    int recovery_time = 14;
+    int recovery_time = get_int("Recovery time (recommended: 14):");
 
     /*
         Test input:
