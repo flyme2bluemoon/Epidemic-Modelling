@@ -19,8 +19,8 @@ typedef struct {
         Status -1 | susceptable
         Status -2 | died
         Status -3 | recovered
-        Status 1 - 14 | days since infection (can be changed by input?)
-        Status 0 | Invalid (no person)
+        Status 0 - 14 | days since infection 
+        // TODO (reflect this change in code as 0 is currently invalid)
     */
 } Person;
 
@@ -111,6 +111,43 @@ void move_people(int range, int width, int population, int map[width][width], Pe
     return;
 }
 
+void virus_transmission(int transmission_distance, int width, int population, int map[width][width], Person people[population]) {
+    for (int i = 0; i < population; i++) {
+        if (people[i].status == -1) {
+            int positive_dx = transmission_distance;
+            int negative_dx = transmission_distance * -1;
+            int positive_dy = transmission_distance;
+            int negative_dy = transmission_distance * -1;
+            if (people[i].coordinates.x_position + positive_dx >= width) {
+                positive_dx = width - people[i].coordinates.x_position - 1;
+            }
+            if (people[i].coordinates.x_position + negative_dx < 0) {
+                negative_dx = 0 - people[i].coordinates.x_position;
+            }
+            if (people[i].coordinates.y_position + positive_dy >= width) {
+                positive_dy = width - people[i].coordinates.y_position - 1;
+            }
+            if (people[i].coordinates.y_position + negative_dy < 0) {
+                negative_dy = 0 - people[i].coordinates.y_position;
+            }
+            for (int dx = negative_dx; dx <= positive_dx; dx++) {
+                for (int dy = negative_dy; dy <= positive_dy; dy++) {
+                    if (map[people[i].coordinates.x_position + dx][people[i].coordinates.y_position +dy] != -1) {
+                        if (people[map[people[i].coordinates.x_position + dx][people[i].coordinates.y_position +dy]].status >= 1) {
+                            // TODO: update percent change for transmission later
+                            if (rand() % 2) {
+                                people[i].status = 1;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    return;
+}
+
 int main(void) {
     // print greeting message
     greet();
@@ -123,6 +160,7 @@ int main(void) {
     int population = get_int("Population (requirement: < width * width):");
     int days = get_int("Numbers of days (recommended: 30):");
     int range = get_int("Range of movements (recommended: 2):");
+    int transmission_distance = get_int("Range of virus transmission (recommended: 1):");
     int recovery_time = get_int("Recovery time (recommended: 14):");
 
     /*
@@ -178,6 +216,8 @@ int main(void) {
         increment_day(population, people, recovery_time);
         printf("Moving...\n");
         move_people(range, width, population, map, people);
+        printf("Simulating virus transmission...\n");
+        virus_transmission(transmission_distance, width, population, map, people);
         printf("Printing map...\n");
         print_map(width, population, map, people);
         printf("Printing Status...\n");
