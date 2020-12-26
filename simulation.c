@@ -34,6 +34,18 @@ void greet(void) {
     return;
 }
 
+void print_help(char *program_name) {
+    printf("Usage: %s [--help] [--display-map] [--display-status] [--verbose]\n\n", program_name);
+
+    printf("optional arguments:\n");
+    printf("  -h, --help \t\t show this help message and exit.\n");
+    printf("  --display-map \t Display the map after every simulated day.\n");
+    printf("  --display-status \t Display the status after every simulated day..\n");
+    printf("  --verbose \t\t Behaves as if --display-map and --display-status were specified.\n");
+
+    return;
+}
+
 int get_int(char *prompt) {
     bool is_done = false;
     char input[BUFFERSIZE];
@@ -207,7 +219,33 @@ double vaccinized_percentage_required(double basic_reproduction_number) {
     return percentage_req;
 }
 
-int main(void) {
+int main(int argc, char *argv[]) {
+    // parse command line arguments
+    bool help = false;
+    bool display_map = false;
+    bool display_status = false;
+    for (int i = 1; i < argc; i++) {
+        if (strcmp(argv[i], "-h") == 0 || strcmp(argv[i], "--help") == 0) {
+            help = true;
+        } else if (strcmp(argv[i], "--display-map") == 0) {
+            display_map = true;
+        } else if (strcmp(argv[i], "--display-status") == 0) {
+            display_status = true;
+        } else if (strcmp(argv[i], "-v") == 0 || strcmp(argv[i], "--verbose") == 0) {
+            display_map = true;
+            display_status = true;
+        } else {
+            printf("Invalid argument: %s\n", argv[i]);
+            help = true;
+        }
+    }
+
+    // print help message
+    if (help) {
+        print_help(argv[0]);
+        return 0;
+    }
+
     // print greeting message
     greet();
 
@@ -291,10 +329,14 @@ int main(void) {
         case_count += new_cases;
         printf("Daily case count: %d\n", new_cases);
         printf("Basic Reproduction Number: %f\n", calculate_basic_reproduction_number(population, people));
-        // printf("Printing map...\n");
-        // print_map(width, population, map, people);
-        // printf("Printing Status...\n");
-        // print_status(population, people);
+        if (display_map) {
+            printf("Printing map...\n");
+            print_map(width, population, map, people);
+        }
+        if (display_status) {
+            printf("Printing Status...\n");
+            print_status(population, people);
+        }
     }
 
     // Prints summary
