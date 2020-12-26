@@ -57,10 +57,14 @@ int get_int(char *prompt) {
     return output;
 }
 
-void print_map(int width, int map[width][width]) {
+void print_map(int width, int population, int map[width][width], Person people[population]) {
     for (int i = 0; i < width; i++) {
         for (int j = 0; j < width; j++) {
-            printf("%d ", map[i][j]);
+            if (map[i][j] == -1) {
+                printf("X ");
+            } else {
+                printf("%d ", people[map[i][j]].status);
+            }
         }
         printf("\n");
     }
@@ -97,10 +101,10 @@ void move_people(int range, int width, int population, int map[width][width], Pe
         if ((people[i].coordinates.x_position + dx) >= width || (people[i].coordinates.x_position + dx) < 0 || (people[i].coordinates.y_position + dy) >= width || (people[i].coordinates.y_position + dy) < 0) {
             i--;
         } else {
-            map[people[i].coordinates.x_position][people[i].coordinates.y_position] = 0;
+            map[people[i].coordinates.x_position][people[i].coordinates.y_position] = -1;
             people[i].coordinates.x_position += dx;
             people[i].coordinates.y_position += dy;
-            map[people[i].coordinates.x_position][people[i].coordinates.y_position] = people[i].status;
+            map[people[i].coordinates.x_position][people[i].coordinates.y_position] = i;
         }
     }
 
@@ -144,7 +148,7 @@ int main(void) {
     // initializing arrays
     for (int i = 0; i < width; i++) {
         for (int j = 0; j < width; j++) {
-            map[i][j] = 0;
+            map[i][j] = -1;
         }
     }
 
@@ -152,10 +156,10 @@ int main(void) {
         people[i].coordinates.x_position = rand() % width;
         people[i].coordinates.y_position = rand() % width;
         people[i].status = -1;
-        if (map[people[i].coordinates.x_position][people[i].coordinates.y_position] != 0) {
+        if (map[people[i].coordinates.x_position][people[i].coordinates.y_position] != -1) {
             i--;
         }
-        map[people[i].coordinates.x_position][people[i].coordinates.y_position] = people[i].status;
+        map[people[i].coordinates.x_position][people[i].coordinates.y_position] = i;
     }
 
     // patient zero
@@ -164,7 +168,7 @@ int main(void) {
 
     // actual code
     printf("[*] Day 0\n==========\n");
-    print_map(width, map);
+    print_map(width, population, map, people);
     printf("\n");
 
     for (int i = 1; i <= days; i++) {
@@ -174,7 +178,7 @@ int main(void) {
         printf("Moving...\n");
         move_people(range, width, population, map, people);
         printf("Printing map...\n");
-        print_map(width, map);
+        print_map(width, population, map, people);
         printf("Printing Status...\n");
         print_status(population, people);
     }
