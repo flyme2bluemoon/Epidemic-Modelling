@@ -103,6 +103,14 @@ int main(void) {
     int days = get_int("Numbers of days (recommended: 30):");
     int range = get_int("Range of movements (recommended: 2):");
 
+    /*
+        Test input:
+        width=25
+        population=5
+        days=5
+        range=2
+    */
+
     if (population > width * width) {
         printf("Population must be less than the area.\n");
         return 1;
