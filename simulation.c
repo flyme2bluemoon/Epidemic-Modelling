@@ -22,6 +22,7 @@ typedef struct {
         Status 0 - 14 | days since infection 
         // TODO (reflect this change in code as 0 is currently invalid)
     */
+   int basic_reproduction_number;
 } Person;
 
 void greet(void) {
@@ -114,7 +115,7 @@ void move_people(int range, int width, int population, int map[width][width], Pe
     return;
 }
 
-void virus_transmission(int transmission_distance, int width, int population, int map[width][width], Person people[population]) {
+void virus_transmission(int transmission_distance, int chance_of_transmission, int width, int population, int map[width][width], Person people[population]) {
     for (int i = 0; i < population; i++) {
         if (people[i].status == -1) {
             int positive_dx = transmission_distance;
@@ -137,8 +138,8 @@ void virus_transmission(int transmission_distance, int width, int population, in
                 for (int dy = negative_dy; dy <= positive_dy; dy++) {
                     if (map[people[i].coordinates.x_position + dx][people[i].coordinates.y_position +dy] != -1) {
                         if (people[map[people[i].coordinates.x_position + dx][people[i].coordinates.y_position +dy]].status >= 1) {
-                            // TODO: update percent change for transmission later
-                            if (rand() % 2) {
+                            if (rand() % 100 < chance_of_transmission && people[i].status == -1) {
+                                people[map[people[i].coordinates.x_position + dx][people[i].coordinates.y_position +dy]].basic_reproduction_number++;
                                 people[i].status = 1;
                             }
                         }
@@ -185,6 +186,20 @@ void print_daily_case_counts(int days, int daily_cases[days]) {
     }
 }
 
+double calculate_basic_reproduction_number(int population, Person people[population]) {
+    double total = 0;
+    double spreaders = 0;
+    for (int i = 0; i < population; i++) {
+        if (people[i].basic_reproduction_number != 0) {
+            total += people[i].basic_reproduction_number;
+            spreaders++;
+        }
+    }
+    double basic_reproduction_number = total / spreaders;
+
+    return basic_reproduction_number;
+}
+
 int main(void) {
     // print greeting message
     greet();
@@ -198,6 +213,7 @@ int main(void) {
     int days = get_int("Numbers of days (recommended: 30):");
     int range = get_int("Range of movements (recommended: 2):");
     int transmission_distance = get_int("Range of virus transmission (recommended: 1):");
+    int chance_of_transmission = get_int("Chance of transmission (recommended: 50, range: 0-100):");
     int recovery_time = get_int("Recovery time (recommended: 14):");
 
     // init case count to zero
@@ -220,6 +236,9 @@ int main(void) {
     } else if (range > width) {
         printf("Range must be less than the width.\n");
         return 1;
+    } else if (chance_of_transmission > 100 || chance_of_transmission < 0) {
+        printf("Chance of traqnsmission must be between 0 and 100.\n");
+        return 1;
     }
 
     printf("\nRunning Simulation!\n\n");
@@ -239,6 +258,7 @@ int main(void) {
         people[i].coordinates.x_position = rand() % width;
         people[i].coordinates.y_position = rand() % width;
         people[i].status = -1;
+        people[i].basic_reproduction_number = 0;
         if (map[people[i].coordinates.x_position][people[i].coordinates.y_position] != -1) {
             i--;
         }
@@ -258,13 +278,14 @@ int main(void) {
         printf("Moving...\n");
         move_people(range, width, population, map, people);
         printf("Simulating virus transmission...\n");
-        virus_transmission(transmission_distance, width, population, map, people);
+        virus_transmission(transmission_distance, chance_of_transmission, width, population, map, people);
         printf("Tallying case counts...\n");
         int new_cases = add_new_cases(population, people, i - 1, days, case_count, daily_cases);
         case_count += new_cases;
         printf("Daily case count: %d\n", new_cases);
-        printf("Printing map...\n");
-        print_map(width, population, map, people);
+        printf("Basic Reproduction Number: %f\n", calculate_basic_reproduction_number(population, people));
+        // printf("Printing map...\n");
+        // print_map(width, population, map, people);
         // printf("Printing Status...\n");
         // print_status(population, people);
     }
@@ -276,6 +297,8 @@ int main(void) {
     printf("Percentage infected: %.2f%%\n", percentage_infected);
     printf("Total number of cases: %d\n", case_count);
     print_daily_case_counts(days, daily_cases);
-
+    double basic_reproduction_number = calculate_basic_reproduction_number(population, people);
+    printf("Basic Reproduction Number: %f\n", basic_reproduction_number);
+    
     return 0;
 }
