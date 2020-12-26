@@ -19,7 +19,7 @@ typedef struct {
         Status -1 | susceptable
         Status -2 | died
         Status -3 | recovered
-        Status 1 - 14 | days since infection
+        Status 1 - 14 | days since infection (can be changed by input?)
         Status 0 | Invalid (no person)
     */
 } Person;
@@ -29,6 +29,8 @@ void greet(void) {
     printf("Made with love by Matthew Shen (flyme2bluemoon)\n");
     printf("Wear a mask and stay save during the COVID-19 Pandemic\n");
     printf("\n================================================\n\n");
+
+    return;
 }
 
 int get_int(char *prompt) {
@@ -63,8 +65,6 @@ void print_map(int width, int map[width][width]) {
         printf("\n");
     }
 
-    printf("\n");
-
     return;
 }
 
@@ -72,13 +72,29 @@ void print_status(int population, Person people[population]) {
     for (int i = 0; i < population; i++) {
         printf("Person %d is at (%d, %d) and has the status code %d.\n", i, people[i].coordinates.x_position, people[i].coordinates.y_position, people[i].status);
     }
+    printf("\n");
+
+    return;
+}
+
+void increment_day(int population, Person people[population], int recovery_time) {
+    for (int i = 0; i < population; i++) {
+        if (people[i].status > 0) {
+            people[i].status++;
+            if (people[i].status > recovery_time) {
+                people[i].status = -3;
+            }
+        }
+    }
+
+    return;
 }
 
 void move_people(int range, int width, int population, int map[width][width], Person people[population]) {
     for (int i = 0; i < population; i++) {
         int dx = (rand() % (range * 2 + 1)) - range;
         int dy = (rand() % (range * 2 + 1)) - range;
-        if (people[i].coordinates.x_position + dx >= width || people[i].coordinates.x_position + dx < 0 || people[i].coordinates.y_position >= width || people[i].coordinates.y_position + dx < 0) {
+        if ((people[i].coordinates.x_position + dx) >= width || (people[i].coordinates.x_position + dx) < 0 || (people[i].coordinates.y_position + dy) >= width || (people[i].coordinates.y_position + dy) < 0) {
             i--;
         } else {
             map[people[i].coordinates.x_position][people[i].coordinates.y_position] = 0;
@@ -102,6 +118,7 @@ int main(void) {
     int population = get_int("Population (requirement: < width * width):");
     int days = get_int("Numbers of days (recommended: 30):");
     int range = get_int("Range of movements (recommended: 2):");
+    int recovery_time = 14;
 
     /*
         Test input:
@@ -146,13 +163,19 @@ int main(void) {
     people[patient_zero].status = 1;
 
     // actual code
+    printf("[*] Day 0\n==========\n");
     print_map(width, map);
+    printf("\n");
 
-    for (int i = 0; i < days; i++) {
+    for (int i = 1; i <= days; i++) {
+        printf("[*] Day %d\n==========\n", i);
+        printf("Incrementing...\n");
+        increment_day(population, people, recovery_time);
+        printf("Moving...\n");
         move_people(range, width, population, map, people);
-
+        printf("Printing map...\n");
         print_map(width, map);
-
+        printf("Printing Status...\n");
         print_status(population, people);
     }
 
