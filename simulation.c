@@ -200,6 +200,13 @@ double calculate_basic_reproduction_number(int population, Person people[populat
     return basic_reproduction_number;
 }
 
+double vaccinized_percentage_required(double basic_reproduction_number) {
+    double endemic_equilibrium = 1.0 / basic_reproduction_number;
+    double percentage_req = (1 - endemic_equilibrium) * 100;
+
+    return percentage_req;
+}
+
 int main(void) {
     // print greeting message
     greet();
@@ -299,6 +306,8 @@ int main(void) {
     print_daily_case_counts(days, daily_cases);
     double basic_reproduction_number = calculate_basic_reproduction_number(population, people);
     printf("Basic Reproduction Number: %f\n", basic_reproduction_number);
-    
+    double vaccine_percent_requirement = vaccinized_percentage_required(basic_reproduction_number);
+    printf("Percentage of population immunized to stop spread required: %f\n", vaccine_percent_requirement);
+
     return 0;
 }
