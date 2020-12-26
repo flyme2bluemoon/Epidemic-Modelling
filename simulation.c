@@ -68,6 +68,12 @@ void print_map(int width, int map[width][width]) {
     return;
 }
 
+void print_status(int population, Person people[population]) {
+    for (int i = 0; i < population; i++) {
+        printf("Person %d is at (%d, %d) and has the status code %d.\n", i, people[i].coordinates.x_position, people[i].coordinates.y_position, people[i].status);
+    }
+}
+
 void move_people(int range, int width, int population, int map[width][width], Person people[population]) {
     for (int i = 0; i < population; i++) {
         int dx = (rand() % (range * 2 + 1)) - range;
@@ -139,9 +145,7 @@ int main(void) {
 
         print_map(width, map);
 
-        for (int j = 0; j < population; j++) {
-            printf("Person %d is at (%d, %d) and has the status code %d.\n", j, people[j].coordinates.x_position, people[j].coordinates.y_position, people[j].status);
-        }
+        print_status(population, people);
     }
 
     printf("\n====SUMMARY====\n");
