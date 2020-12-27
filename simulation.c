@@ -49,6 +49,7 @@ void print_help(char *program_name) {
     printf("  -h, --help \t\t show this help message and exit.\n");
     printf("  --display-map \t Display the map after every simulated day.\n");
     printf("  --display-status \t Display the status after every simulated day..\n");
+    printf("  --display-case-counts  Displays the daily and cumulative case counts in stdin.\n");
     printf("  --verbose \t\t Behaves as if --display-map and --display-status were specified.\n");
 
     return;
@@ -191,19 +192,51 @@ double calculate_infected_percentage(int population, Person people[population]) 
     return percentage;
 }
 
-int add_new_cases(int population, Person people[population], int current_day, int days, int case_count, int daily_cases[days]) {
+int add_new_cases(int population, Person people[population], int current_day, int days, int case_count, int daily_cases[days], int cumulative_cases[days]) {
     double infected = calculate_number_of_infections(population, people);
     int new_cases = (int)infected - case_count;
 
     daily_cases[current_day] = new_cases;
 
+    if (current_day == 0) {
+        cumulative_cases[current_day] = new_cases;
+    } else {
+        cumulative_cases[current_day] = cumulative_cases[current_day - 1] + new_cases;
+    }
+
     return new_cases;
 }
 
-void print_daily_case_counts(int days, int daily_cases[days]) {
+void print_daily_case_counts(int days, int daily_cases[days], bool display_case_count) {
+    FILE *daily_case_counts_txt = fopen("daily_case_counts.txt", "w");
+    FILE *daily_case_counts_csv = fopen("daily_case_counts.csv", "w");
+
     for (int i = 0; i < days; i++) {
-        printf("Day %d: %d cases\n", i + 1, daily_cases[i]);
+        fprintf(daily_case_counts_txt, "Day %d: %d new cases\n", i + 1, daily_cases[i]);
+        fprintf(daily_case_counts_csv, "day_%d,%d\n", i + 1, daily_cases[i]);
+        if (display_case_count) {
+            printf("Day %d: %d new cases\n", i + 1, daily_cases[i]);
+        }
     }
+
+    fclose(daily_case_counts_txt);
+    fclose(daily_case_counts_csv);
+}
+
+void print_cumulative_case_counts(int days, int cumulative_cases[days], bool display_case_count) {
+    FILE *cumulative_case_counts_txt = fopen("cumulative_case_counts.txt", "w");
+    FILE *cumulative_case_counts_csv = fopen("cumulative_case_counts.csv", "w");
+
+    for (int i = 0; i < days; i++) {
+        fprintf(cumulative_case_counts_txt, "Day %d: %d cumulative cases\n", i + 1, cumulative_cases[i]);
+        fprintf(cumulative_case_counts_csv, "day_%d,%d\n", i + 1, cumulative_cases[i]);
+        if (display_case_count) {
+            printf("Day %d: %d new cases\n", i + 1, cumulative_cases[i]);
+        }
+    }
+
+    fclose(cumulative_case_counts_txt);
+    fclose(cumulative_case_counts_csv);
 }
 
 double calculate_basic_reproduction_number(int population, Person people[population]) {
@@ -232,6 +265,7 @@ int main(int argc, char *argv[]) {
     bool help = false;
     bool display_map = false;
     bool display_status = false;
+    bool display_case_count = false;
     for (int i = 1; i < argc; i++) {
         if (strcmp(argv[i], "-h") == 0 || strcmp(argv[i], "--help") == 0) {
             help = true;
@@ -242,6 +276,8 @@ int main(int argc, char *argv[]) {
         } else if (strcmp(argv[i], "-v") == 0 || strcmp(argv[i], "--verbose") == 0) {
             display_map = true;
             display_status = true;
+        } else if (strcmp(argv[i], "--display-case-counts") == 0) {
+            display_case_count = true;
         } else {
             printf("Invalid argument: %s\n", argv[i]);
             help = true;
@@ -272,6 +308,7 @@ int main(int argc, char *argv[]) {
     // init case count to zero
     int case_count = 0;
     int daily_cases[days];
+    int cumulative_cases[days];
 
     /*
         Test input:
@@ -333,7 +370,7 @@ int main(int argc, char *argv[]) {
         printf("Simulating virus transmission...\n");
         virus_transmission(transmission_distance, chance_of_transmission, width, population, map, people);
         printf("Tallying case counts...\n");
-        int new_cases = add_new_cases(population, people, i - 1, days, case_count, daily_cases);
+        int new_cases = add_new_cases(population, people, i - 1, days, case_count, daily_cases, cumulative_cases);
         case_count += new_cases;
         printf("Daily case count: %d\n", new_cases);
         printf("Basic Reproduction Number: %f\n", calculate_basic_reproduction_number(population, people));
@@ -353,7 +390,8 @@ int main(int argc, char *argv[]) {
     double percentage_infected = calculate_infected_percentage(population, people);
     printf("Percentage infected: %.2f%%\n", percentage_infected);
     printf("Total number of cases: %d\n", case_count);
-    print_daily_case_counts(days, daily_cases);
+    print_daily_case_counts(days, daily_cases, display_case_count);
+    print_cumulative_case_counts(days, cumulative_cases, display_case_count);
     double basic_reproduction_number = calculate_basic_reproduction_number(population, people);
     printf("Basic Reproduction Number: %f\n", basic_reproduction_number);
     double vaccine_percent_requirement = vaccinized_percentage_required(basic_reproduction_number);
