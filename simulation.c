@@ -82,6 +82,18 @@ int get_int(char *prompt) {
     return output;
 }
 
+double get_average(int length, double array[length]) {
+    double total = 0;
+
+    for (int i = 0; i < length; i++) {
+        total += array[i];
+    }
+
+    double output = total / (double) length;
+
+    return output;
+}
+
 void print_map(int width, int population, int map[width][width], Person people[population]) {
     for (int i = 0; i < width; i++) {
         for (int j = 0; j < width; j++) {
@@ -123,7 +135,7 @@ void move_people(int range, int width, int population, int map[width][width], Pe
     for (int i = 0; i < population; i++) {
         int dx = (rand() % (range * 2 + 1)) - range;
         int dy = (rand() % (range * 2 + 1)) - range;
-        if ((people[i].coordinates.x_position + dx) >= width || (people[i].coordinates.x_position + dx) < 0 || (people[i].coordinates.y_position + dy) >= width || (people[i].coordinates.y_position + dy) < 0) {
+        if ((people[i].coordinates.x_position + dx) >= width || (people[i].coordinates.x_position + dx) < 0 || (people[i].coordinates.y_position + dy) >= width || (people[i].coordinates.y_position + dy) < 0 || map[people[i].coordinates.x_position + dx][people[i].coordinates.y_position + dy] != -1) {
             i--;
         } else {
             map[people[i].coordinates.x_position][people[i].coordinates.y_position] = -1;
@@ -243,8 +255,8 @@ double calculate_basic_reproduction_number(int population, Person people[populat
     double total = 0;
     double spreaders = 0;
     for (int i = 0; i < population; i++) {
-        if (people[i].basic_reproduction_number != 0) {
-            total += people[i].basic_reproduction_number;
+        total += people[i].basic_reproduction_number;
+        if (people[i].status == -3 || people[i].status > 1) {
             spreaders++;
         }
     }
@@ -310,6 +322,9 @@ int main(int argc, char *argv[]) {
     int daily_cases[days];
     int cumulative_cases[days];
 
+    // init daily basic reproduction number
+    double daily_basic_reproduction_number[days];
+
     /*
         Test input:
         width=25
@@ -373,7 +388,9 @@ int main(int argc, char *argv[]) {
         int new_cases = add_new_cases(population, people, i - 1, days, case_count, daily_cases, cumulative_cases);
         case_count += new_cases;
         printf("Daily case count: %d\n", new_cases);
-        printf("Basic Reproduction Number: %f\n", calculate_basic_reproduction_number(population, people));
+        double current_basic_reproduction_number = calculate_basic_reproduction_number(population, people);
+        daily_basic_reproduction_number[i - 1] = current_basic_reproduction_number;
+        printf("Basic Reproduction Number: %f\n", current_basic_reproduction_number);
         if (display_map) {
             printf("Printing map...\n");
             print_map(width, population, map, people);
@@ -392,7 +409,7 @@ int main(int argc, char *argv[]) {
     printf("Total number of cases: %d\n", case_count);
     print_daily_case_counts(days, daily_cases, display_case_count);
     print_cumulative_case_counts(days, cumulative_cases, display_case_count);
-    double basic_reproduction_number = calculate_basic_reproduction_number(population, people);
+    double basic_reproduction_number = get_average(days, daily_basic_reproduction_number);
     printf("Basic Reproduction Number: %f\n", basic_reproduction_number);
     double vaccine_percent_requirement = vaccinized_percentage_required(basic_reproduction_number);
     printf("Percentage of population immunized to stop spread required: %.2f%%\n", vaccine_percent_requirement);
