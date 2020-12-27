@@ -54,3 +54,4 @@ dkms.conf
 .DS_Store
 test*
 *case_counts*
+*death_tolls*
