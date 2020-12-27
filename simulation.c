@@ -49,7 +49,7 @@ void print_help(char *program_name) {
     printf("  -h, --help \t\t show this help message and exit.\n");
     printf("  --display-map \t Display the map after every simulated day.\n");
     printf("  --display-status \t Display the status after every simulated day..\n");
-    printf("  --display-case-counts  Displays the daily and cumulative case counts in stdin.\n");
+    printf("  --display-counts \t Displays the daily and cumulative case and death counts in stdin.\n");
     printf("  --verbose \t\t Behaves as if --display-map and --display-status were specified.\n");
 
     return;
@@ -118,12 +118,19 @@ void print_status(int population, Person people[population]) {
     return;
 }
 
-void increment_day(int population, Person people[population], int recovery_time) {
+void increment_day(int population, Person people[population], int recovery_time, int chance_of_death, int width, int map[width][width]) {
     for (int i = 0; i < population; i++) {
         if (people[i].status > 0) {
             people[i].status++;
             if (people[i].status > recovery_time) {
-                people[i].status = -3;
+                if (rand() % 100 < chance_of_death) {
+                    people[i].status = -2;
+                    map[people[i].coordinates.x_position][people[i].coordinates.y_position] = -1;
+                    people[i].coordinates.x_position = -1;
+                    people[i].coordinates.y_position = -1;
+                } else {
+                    people[i].status = -3;
+                }
             }
         }
     }
@@ -133,6 +140,9 @@ void increment_day(int population, Person people[population], int recovery_time)
 
 void move_people(int range, int width, int population, int map[width][width], Person people[population]) {
     for (int i = 0; i < population; i++) {
+        if (people[i].status == -2) {
+            continue;
+        }
         int dx = (rand() % (range * 2 + 1)) - range;
         int dy = (rand() % (range * 2 + 1)) - range;
         if ((people[i].coordinates.x_position + dx) >= width || (people[i].coordinates.x_position + dx) < 0 || (people[i].coordinates.y_position + dy) >= width || (people[i].coordinates.y_position + dy) < 0 || map[people[i].coordinates.x_position + dx][people[i].coordinates.y_position + dy] != -1) {
@@ -196,12 +206,32 @@ double calculate_number_of_infections(int population, Person people[population])
     return infected;
 }
 
+double calculate_number_of_deaths(int population, Person people[population]) {
+    double deaths = 0;
+    for (int i = 0; i < population; i++) {
+        if (people[i].status == -2) {
+            deaths++;
+        }
+    }
+
+    return deaths;
+}
+
 double calculate_infected_percentage(int population, Person people[population]) {
     double infected = calculate_number_of_infections(population, people);
 
     double percentage = (infected / population) * 100;
 
     return percentage;
+}
+
+double calculate_death_rate(int population, Person people[population]) {
+    double deaths = calculate_number_of_deaths(population, people);
+    double infected = calculate_number_of_infections(population, people);
+
+    double death_rate = (deaths / infected) * 100;
+
+    return death_rate;
 }
 
 int add_new_cases(int population, Person people[population], int current_day, int days, int case_count, int daily_cases[days], int cumulative_cases[days]) {
@@ -219,14 +249,29 @@ int add_new_cases(int population, Person people[population], int current_day, in
     return new_cases;
 }
 
-void print_daily_case_counts(int days, int daily_cases[days], bool display_case_count) {
+int add_new_deaths(int population, Person people[population], int current_day, int days, int death_toll, int daily_deaths[days], int cumulative_deaths[days]) {
+    double deaths = calculate_number_of_deaths(population, people);
+    int new_deaths = (int)deaths - death_toll;
+
+    daily_deaths[current_day] = new_deaths;
+
+    if (current_day == 0) {
+        cumulative_deaths[current_day] = new_deaths;
+    } else {
+        cumulative_deaths[current_day] = cumulative_deaths[current_day - 1] + new_deaths;
+    }
+
+    return new_deaths;
+}
+
+void print_daily_case_counts(int days, int daily_cases[days], bool display_counts) {
     FILE *daily_case_counts_txt = fopen("daily_case_counts.txt", "w");
     FILE *daily_case_counts_csv = fopen("daily_case_counts.csv", "w");
 
     for (int i = 0; i < days; i++) {
         fprintf(daily_case_counts_txt, "Day %d: %d new cases\n", i + 1, daily_cases[i]);
         fprintf(daily_case_counts_csv, "day_%d,%d\n", i + 1, daily_cases[i]);
-        if (display_case_count) {
+        if (display_counts) {
             printf("Day %d: %d new cases\n", i + 1, daily_cases[i]);
         }
     }
@@ -235,20 +280,46 @@ void print_daily_case_counts(int days, int daily_cases[days], bool display_case_
     fclose(daily_case_counts_csv);
 }
 
-void print_cumulative_case_counts(int days, int cumulative_cases[days], bool display_case_count) {
+void print_cumulative_case_counts(int days, int cumulative_cases[days], bool display_counts) {
     FILE *cumulative_case_counts_txt = fopen("cumulative_case_counts.txt", "w");
     FILE *cumulative_case_counts_csv = fopen("cumulative_case_counts.csv", "w");
 
     for (int i = 0; i < days; i++) {
         fprintf(cumulative_case_counts_txt, "Day %d: %d cumulative cases\n", i + 1, cumulative_cases[i]);
         fprintf(cumulative_case_counts_csv, "day_%d,%d\n", i + 1, cumulative_cases[i]);
-        if (display_case_count) {
+        if (display_counts) {
             printf("Day %d: %d new cases\n", i + 1, cumulative_cases[i]);
         }
     }
 
     fclose(cumulative_case_counts_txt);
     fclose(cumulative_case_counts_csv);
+}
+
+void print_daily_death_toll(int days, int daily_deaths[days], bool display_counts) {
+    FILE *daily_death_tolls_txt = fopen("daily_death_tolls.txt", "w");
+    FILE *daily_death_tolls_csv = fopen("daily_death_tolls.csv", "w");
+
+    for (int i = 0; i < days; i++) {
+        fprintf(daily_death_tolls_txt, "Day %d: %d new deaths\n", i + 1, daily_deaths[i]);
+        fprintf(daily_death_tolls_csv, "day_%d,%d\n", i + 1, daily_deaths[i]);
+        if (display_counts) {
+            printf("Day %d: %d new deaths\n", i + 1, daily_deaths[i]);
+        }
+    }
+}
+
+void print_cumulative_death_toll(int days, int cumulative_deaths[days], bool display_counts) {
+    FILE *cumulative_death_tolls_txt = fopen("cumulative_death_tolls.txt", "w");
+    FILE *cumulative_death_tolls_csv = fopen("cumulative_death_tolls.csv", "w");
+
+    for (int i = 0; i < days; i++) {
+        fprintf(cumulative_death_tolls_txt, "Day %d: %d new deaths\n", i + 1, cumulative_deaths[i]);
+        fprintf(cumulative_death_tolls_csv, "day_%d,%d\n", i + 1, cumulative_deaths[i]);
+        if (display_counts) {
+            printf("Day %d: %d new deaths\n", i + 1, cumulative_deaths[i]);
+        }
+    }
 }
 
 double calculate_basic_reproduction_number(int population, Person people[population]) {
@@ -277,7 +348,7 @@ int main(int argc, char *argv[]) {
     bool help = false;
     bool display_map = false;
     bool display_status = false;
-    bool display_case_count = false;
+    bool display_counts = false;
     for (int i = 1; i < argc; i++) {
         if (strcmp(argv[i], "-h") == 0 || strcmp(argv[i], "--help") == 0) {
             help = true;
@@ -288,8 +359,8 @@ int main(int argc, char *argv[]) {
         } else if (strcmp(argv[i], "-v") == 0 || strcmp(argv[i], "--verbose") == 0) {
             display_map = true;
             display_status = true;
-        } else if (strcmp(argv[i], "--display-case-counts") == 0) {
-            display_case_count = true;
+        } else if (strcmp(argv[i], "--display-counts") == 0) {
+            display_counts = true;
         } else {
             printf("Invalid argument: %s\n", argv[i]);
             help = true;
@@ -316,11 +387,17 @@ int main(int argc, char *argv[]) {
     int transmission_distance = get_int("Range of virus transmission (recommended: 1):");
     int chance_of_transmission = get_int("Chance of transmission (recommended: 50, range: 0-100):");
     int recovery_time = get_int("Recovery time (recommended: 14):");
+    int chance_of_death = get_int("Chance of death (recommended: 2, range: 0-100):");
 
     // init case count to zero
     int case_count = 0;
     int daily_cases[days];
     int cumulative_cases[days];
+
+    // init death toll to zero
+    int death_toll = 0;
+    int daily_deaths[days];
+    int cumulative_deaths[days];
 
     // init daily basic reproduction number
     double daily_basic_reproduction_number[days];
@@ -379,7 +456,7 @@ int main(int argc, char *argv[]) {
     for (int i = 1; i <= days; i++) {
         printf("\n[*] Day %d\n==========\n", i);
         printf("Incrementing...\n");
-        increment_day(population, people, recovery_time);
+        increment_day(population, people, recovery_time, chance_of_death, width, map);
         printf("Moving...\n");
         move_people(range, width, population, map, people);
         printf("Simulating virus transmission...\n");
@@ -388,6 +465,9 @@ int main(int argc, char *argv[]) {
         int new_cases = add_new_cases(population, people, i - 1, days, case_count, daily_cases, cumulative_cases);
         case_count += new_cases;
         printf("Daily case count: %d\n", new_cases);
+        int new_deaths = add_new_deaths(population, people, i - 1, days, death_toll, daily_deaths, cumulative_deaths);
+        death_toll += new_deaths;
+        printf("Daily death count: %d\n", new_deaths);
         double current_basic_reproduction_number = calculate_basic_reproduction_number(population, people);
         daily_basic_reproduction_number[i - 1] = current_basic_reproduction_number;
         printf("Basic Reproduction Number: %f\n", current_basic_reproduction_number);
@@ -407,8 +487,13 @@ int main(int argc, char *argv[]) {
     double percentage_infected = calculate_infected_percentage(population, people);
     printf("Percentage infected: %.2f%%\n", percentage_infected);
     printf("Total number of cases: %d\n", case_count);
-    print_daily_case_counts(days, daily_cases, display_case_count);
-    print_cumulative_case_counts(days, cumulative_cases, display_case_count);
+    print_daily_case_counts(days, daily_cases, display_counts);
+    print_cumulative_case_counts(days, cumulative_cases, display_counts);
+    double death_rate = calculate_death_rate(population, people);
+    printf("Death rate: %f%%\n", death_rate);
+    printf("Total number of deaths: %d\n", death_toll);
+    print_daily_death_toll(days, daily_deaths, display_counts);
+    print_cumulative_death_toll(days, cumulative_deaths, display_counts);
     double basic_reproduction_number = get_average(days, daily_basic_reproduction_number);
     printf("Basic Reproduction Number: %f\n", basic_reproduction_number);
     double vaccine_percent_requirement = vaccinized_percentage_required(basic_reproduction_number);
