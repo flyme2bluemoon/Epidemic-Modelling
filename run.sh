@@ -1,4 +1,4 @@
-#!/bin/zsh
+#!/bin/sh
 
 width=25;
 population=500;
